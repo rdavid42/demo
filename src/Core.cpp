@@ -21,8 +21,21 @@ key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	(void)scancode;
 	(void)mods;
 	(void)core;
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
+	if (action == GLFW_PRESS)
+	{
+		if (key == GLFW_KEY_ESCAPE)
+			glfwSetWindowShouldClose(window, GL_TRUE);
+		else if (key == GLFW_KEY_KP_ADD)
+			core->pushDemo();
+		else if (key == GLFW_KEY_KP_SUBTRACT)
+			core->popDemo();
+		else if (key == GLFW_KEY_X)
+			core->xAxis = !core->xAxis;
+		else if (key == GLFW_KEY_Y)
+			core->yAxis = !core->yAxis;
+		else if (key == GLFW_KEY_Z)
+			core->zAxis = !core->zAxis;
+	}
 }
 
 void
@@ -250,6 +263,10 @@ Core::createAxes()
 	glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, (void *)(sizeof(GLfloat) * 3));
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, axesVbo[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * 6, axesIndices, GL_STATIC_DRAW);
+
+	xAxis = false;
+	yAxis = false;
+	zAxis = false;
 }
 
 int
@@ -279,11 +296,12 @@ Core::init()
 		return (0);
 	this->getLocations();
 	this->buildProjectionMatrix(this->projMatrix, 53.13f, 0.1f, 1000.0f);
-	this->cameraPos.set(1.5f, 1.5f, 1.5f);
+	this->cameraPos.set(3.5f, 3.5f, 3.5f);
 	this->cameraLookAt.set(0.0f, 0.0f, 0.0f);
 	this->setCamera(this->viewMatrix, this->cameraPos, this->cameraLookAt);
 	glfwSetKeyCallback(this->window, key_callback);
 	createAxes();
+	pushDemo();
 	return (1);
 }
 
@@ -292,6 +310,48 @@ Core::update()
 {
 	if (glfwGetKey(this->window, GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(this->window, GL_TRUE);
+	if (glfwGetKey(this->window, GLFW_KEY_1))
+	{
+		axes.front().translation.x += 0.05f * xAxis;
+		axes.front().translation.y += 0.05f * yAxis;
+		axes.front().translation.z += 0.05f * zAxis;
+	}
+	else if (glfwGetKey(this->window, GLFW_KEY_2))
+	{
+		axes.front().translation.x -= 0.05f * xAxis;
+		axes.front().translation.y -= 0.05f * yAxis;
+		axes.front().translation.z -= 0.05f * zAxis;
+	}
+	else if (glfwGetKey(this->window, GLFW_KEY_3))
+	{
+		axes.front().rotation.x += 2 * xAxis;
+		axes.front().rotation.y += 2 * yAxis;
+		axes.front().rotation.z += 2 * zAxis;
+	}
+	else if (glfwGetKey(this->window, GLFW_KEY_4))
+	{
+		axes.front().rotation.x -= 2 * xAxis;
+		axes.front().rotation.y -= 2 * yAxis;
+		axes.front().rotation.z -= 2 * zAxis;
+	}
+	else if (glfwGetKey(this->window, GLFW_KEY_5))
+	{
+		if (xAxis)
+			axes.front().scale.x += 0.01f;
+		if (yAxis)
+			axes.front().scale.y += 0.01f;
+		if (zAxis)
+			axes.front().scale.z += 0.01f;
+	}
+	else if (glfwGetKey(this->window, GLFW_KEY_6))
+	{
+		if (xAxis)
+			axes.front().scale.x -= 0.01f;
+		if (yAxis)
+			axes.front().scale.y -= 0.01f;
+		if (zAxis)
+			axes.front().scale.z -= 0.01f;
+	}
 }
 
 void
@@ -305,12 +365,40 @@ Core::render()
 }
 
 void
+Core::pushDemo()
+{
+	t_demo		first;
+
+	first.rotation.set(0.0f, 0.0f, 0.0f);
+	first.translation.set(0.0f, 0.0f, 0.0f);
+	first.scale.set(1.0f, 1.0f, 1.0f);
+
+	axes.push_front(first);
+}
+
+void
+Core::popDemo()
+{
+	if (axes.size() > 1)
+		axes.pop_front();
+}
+
+void
 Core::renderAxes()
 {
-	ms.push();
-		// ms.translate(0.0f, -0.1f, 1.6f);
-		ms.rotate(-90, 0.0f, 1.0f, 0.0f);
-		// ms.rotate(-3, 0.0f, 0.0f, 1.0f);
+	std::list<t_demo>::iterator		it;
+	std::list<t_demo>::iterator		ite;
+
+	ite = axes.end();
+	it = axes.begin();
+	while (it != ite)
+	{
+		ms.push();
+		ms.translate((*it).translation);
+		ms.rotate((*it).rotation.x, 1.0f, 0.0f, 0.0f);
+		ms.rotate((*it).rotation.y, 0.0f, 1.0f, 0.0f);
+		ms.rotate((*it).rotation.z, 0.0f, 0.0f, 1.0f);
+		ms.scale((*it).scale);
 		glUniformMatrix4fv(objLoc, 1, GL_FALSE, ms.top().val);
 		glBindVertexArray(axesVao);
 		glBindBuffer(GL_ARRAY_BUFFER, axesVbo[0]);
@@ -319,7 +407,15 @@ Core::renderAxes()
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
-	ms.pop();
+		it++;
+	}
+
+	it = axes.begin();
+	while (it != ite)
+	{
+		ms.pop();
+		it++;
+	}
 }
 
 void

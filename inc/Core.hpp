@@ -5,13 +5,22 @@
 # include <cstring>
 # include <iostream>
 # include <cstdlib>
+# include <list>
 # include "Utils.hpp"
 # include "Vec3.hpp"
 # include "Mat4Stack.hpp"
 
+typedef struct		s_demo
+{
+	Vec3<float>		rotation;
+	Vec3<float>		translation;
+	Vec3<float>		scale;
+}					t_demo;
+
 class Core
 {
 public:
+
 	/*
 	** Window
 	*/
@@ -54,6 +63,12 @@ public:
 	GLuint					axesVao;
 	GLuint					axesVbo[2];
 
+	bool					xAxis;
+	bool					yAxis;
+	bool					zAxis;
+
+	std::list<t_demo>		axes;
+
 	Core(void);
 	~Core(void);
 
@@ -64,6 +79,8 @@ public:
 	void					loop();
 	void					createAxes();
 	void					renderAxes();
+	void					pushDemo();
+	void					popDemo();
 
 	/* locations */
 	void					getLocations();
