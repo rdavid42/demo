@@ -30,11 +30,31 @@ key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 		else if (key == GLFW_KEY_KP_SUBTRACT)
 			core->popDemo();
 		else if (key == GLFW_KEY_X)
+		{
 			core->xAxis = !core->xAxis;
+			core->yAxis = false;
+			core->zAxis = false;
+		}
 		else if (key == GLFW_KEY_Y)
+		{
 			core->yAxis = !core->yAxis;
+			core->xAxis = false;
+			core->zAxis = false;
+		}
 		else if (key == GLFW_KEY_Z)
+		{
 			core->zAxis = !core->zAxis;
+			core->yAxis = false;
+			core->xAxis = false;
+		}
+		else if (key == GLFW_KEY_R)
+		{
+			core->axes.clear();
+			core->pushDemo();
+			core->xAxis = false;
+			core->yAxis = false;
+			core->zAxis = false;
+		}
 	}
 }
 
@@ -394,10 +414,10 @@ Core::renderAxes()
 	while (it != ite)
 	{
 		ms.push();
-		ms.translate((*it).translation);
 		ms.rotate((*it).rotation.x, 1.0f, 0.0f, 0.0f);
 		ms.rotate((*it).rotation.y, 0.0f, 1.0f, 0.0f);
 		ms.rotate((*it).rotation.z, 0.0f, 0.0f, 1.0f);
+		ms.translate((*it).translation);
 		ms.scale((*it).scale);
 		glUniformMatrix4fv(objLoc, 1, GL_FALSE, ms.top().val);
 		glBindVertexArray(axesVao);
